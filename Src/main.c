@@ -17,23 +17,13 @@
  */
 
 #include <stdint.h>
-#include <stdio.h>
 
-#include "stm32f4xx.h"
-#include "clock.h"
-#include "timer.h"
-#include "led.h"
-
-/*TODOs
- * - Enable UARTs for CLI
- * - Enable the CLI
- * -
- */
+#if !defined(__SOFT_FP__) && defined(__ARM_FP)
+  #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
+#endif
 
 int main(void)
 {
-	clock_init();
-	init_leds();
-	tim4_output_compare();
-
+    /* Loop forever */
+	for(;;);
 }
