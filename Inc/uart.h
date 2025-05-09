@@ -11,9 +11,13 @@
 #include <stdint.h>
 #include "stm32f4xx.h"
 
+#define SR_TXE			(1U<<7) 	//Transmit data register is empty not mask
+#define SR_RXNE			(1U<<5) 	//Read data register is empty not mask
+
 void uart2_tx_init (void);
 void uart2_rxtx_interrupt_init(void);
 void uart2_rxtx_init (void);
+//static void uart_rx_callback(void);
 char uart2_read(void);
 
 #define SR_RXNE			(1U<<5) 	//Read data register is empty not mask

@@ -7,29 +7,62 @@
 
 #include "uart.h"
 #include "clock.h"
+#include "utils/ringbuffer.h"
 
 #define GPIOAEN			(1U<<0) 	//Enable clock for GPIO A on AHB1
 #define UART2EN			(1U<<17) 	//Enable clock for UART2 on APB1
 #define CR1_TE			(1U<<3) 	//Enable Transmit for UART
 #define CR1_RE			(1U<<2) 	//Enable Receive for UART
 #define CR1_UE			(1U<<13)	//Enable UART Module.
-#define SR_TXE			(1U<<7) 	//Transmit data register is empty not mask
-#define SR_RXNE			(1U<<5) 	//Read data register is empty not mask
+
 #define RXNEIE			(1U<<5)		//Enable RX interrupt
 #define TXEIE			(1U<<7)		//Enable TX interrupt
 
 #define UART_BAUDRATE 	115200
+#define RING_BUFFER_SIZE	64
+
+//static ring_buffer_t rb_tx = {0U};
+//static ring_buffer_t rb_rx = {0U};
+//static uint8_t data_buffer[RING_BUFFER_SIZE] = {0U};
 
 static void uart_set_baudrate(USART_TypeDef *USARTx, uint32_t PeriphClk,
 		uint32_t BaudRate);
 static uint16_t compute_uart_DIV(uint32_t PeriphClk, uint32_t BaudRate);
 void uart2_write(int ch);
 
-int __io_putchar(int ch) {
+//static void uart_tx_clear_interrupt();
+
+
+int __io_putchar(int ch)
+{
+	//put data into the ring buffer
+	//ringbuf_push(ch, tx_buffer);
+	//enable the TX interrupt
+	//USART2->CR2 |= TXEIE;
+	//return ch;
+
 	uart2_write(ch);
 	return ch;
+
+}
+/*
+static void uart_rx_callback(void)
+{
+
+	ringbuf_push(USART2->DR, rxbuffer);
 }
 
+static void uart_tx_callback(void)
+{
+	if (ringbuf_is_empty(*txbuffer)){
+		while(1);//need to add handling for this
+	}
+
+
+}
+*/
+
+//not used
 char uart2_read(void) {
 	//make sure receive data register is empty
 	while (!(USART2->SR & SR_RXNE)) {
@@ -45,11 +78,15 @@ void uart2_write(int ch) {
 	}
 	//write to transmit data register
 	USART2->DR = (ch & 0xFF);
-	for (int i = 0; i < 100; i++) {
-	}
+	for (int i = 0; i < 100; i++) {}
 }
 
 void uart2_rxtx_interrupt_init(void) {
+
+	//Init ring buffer
+	//ringbuf_init(*tx_buffer);
+	//ringbuf_init(*rx_buffer);
+
 	//Configure the UART GPIO pins
 	//enable clock access
 	RCC->AHB1ENR |= GPIOAEN;
@@ -78,7 +115,9 @@ void uart2_rxtx_interrupt_init(void) {
 
 	/*Enable RX TX interrupts*/
 	USART2->CR1 |= RXNEIE;
-	USART2->CR2 |= TXEIE;
+	//clear TX buffer and flag by reading the buffer
+	USART2->DR;
+
 	/*enable UART2 interrupt in NVIC*/
 	NVIC_EnableIRQ(USART2_IRQn);
 

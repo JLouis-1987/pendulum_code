@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include "stm32f4xx.h"
 
+void init_PC6(void);
 void init_leds(void);
 void cycle_leds(void);
 

@@ -9,10 +9,10 @@
 #define LATENCY_2 		0b010
 #define LATENCY_MASK	0b111
 #define PRFTEN			(1U<<8)
-#define PPRE1			(0b100<<13)	//set APB1 clock to be divided by 2 (36 MHz)
-#define PPRE2 			(0b000<<10)	//set APB2 clock to be divided by 0 (72 MHz)
+#define PPRE2			(0b000<<13)	//set APB2 clock to be divided by 0 (72 MHz)
+#define PPRE1 			(0b100<<10)	//set APB1 clock to be divided by 2 (36 MHz)
 #define HPRE			(0b000<<4)	//set AHB clock to be divided by 0 (72 MHz)
-#define PRESCALER		PPRE1 | PPRE2 | HPRE
+#define PRESCALER		PPRE2 | PPRE1 | HPRE
 #define PRESCALER_MASK	0xFCF0
 #define PLLSRC 			(1U<<22)	//set PLL source to HSE
 #define PLLP			(0b01<<16) 	//set P divisor to 4 (assumes 288MHz VCO output freq)

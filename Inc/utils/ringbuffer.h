@@ -1,27 +1,19 @@
-/*
- * ringbuffer.h
- *
- *  Created on: May 7, 2025
- *      Author: gaspr
- */
+#ifndef INC_RING_BUFFER_H
+#define INC_RING_BUFFER_H
 
-#ifndef UTILS_RINGBUFFER_H_
-#define UTILS_RINGBUFFER_H_
+#include <stdint.h>
+#include <stdbool.h>
 
-#define RING_BUFFER_SIZE 	32
+typedef struct ring_buffer_t {
+  uint8_t* buffer;
+  uint32_t mask;
+  uint32_t read_index;
+  uint32_t write_index;
+} ring_buffer_t;
 
-typedef struct {
-    uint8_t buffer[RING_BUFFER_SIZE];
-    uint16_t head;
-    uint16_t tail;
+void ring_buffer_setup(ring_buffer_t* rb, uint8_t* buffer, uint32_t size);
+bool ring_buffer_empty(ring_buffer_t* rb);
+bool ring_buffer_write(ring_buffer_t* rb, uint8_t byte);
+bool ring_buffer_read(ring_buffer_t* rb, uint8_t* byte);
 
-} ringbuf_t;
-
-
-void ringbuf_init(ringbuf_t *c);
-int ringbuf_pop(ringbuf_t *c, uint8_t *data);
-int ringbuf_push(ringbuf_t *c, uint8_t data);
-
-
-
-#endif /* UTILS_RINGBUFFER_H_ */
+#endif // INC_RING_BUFFER_H

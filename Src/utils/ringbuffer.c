@@ -1,51 +1,42 @@
-/*
- * ringbuffer.c
- *
- *  Created on: May 7, 2025
- *      Author: gaspr
- */
-
-#include <stdint.h>
 #include "utils/ringbuffer.h"
 
-void ringbuf_init(ringbuf_t *c)
-{
-	c->head = 0;
-	c->tail = 0;
+void ring_buffer_setup(ring_buffer_t* rb, uint8_t* buffer, uint32_t size) {
+  rb->buffer = buffer;
+  rb->read_index = 0;
+  rb->write_index = 0;
+  rb->mask = size - 1;
 }
 
-
-int ringbuf_pop(ringbuf_t *c, uint8_t *data)
-{
-    int next;
-    const uint8_t maxlen = RING_BUFFER_SIZE;
-
-    if (c->head == c->tail)  // if the head == tail, we don't have any data
-        return -1;
-
-    next = c->tail + 1;  // next is where tail will point to after this read.
-    if(next >= maxlen)
-        next = 0;
-
-    *data = c->buffer[c->tail];  // Read data and then move
-    c->tail = next;              // tail to next offset.
-    return 0;  // return success to indicate successful push.
+bool ring_buffer_empty(ring_buffer_t* rb) {
+  return rb->read_index == rb->write_index;
 }
 
+bool ring_buffer_read(ring_buffer_t* rb, uint8_t* byte) {
+  uint32_t local_read_index = rb->read_index;
+  uint32_t local_write_index = rb->write_index;
 
-int ringbuf_push(ringbuf_t *c, uint8_t data)
-{
-    int next;
-    const uint8_t maxlen = RING_BUFFER_SIZE;
+  if (local_read_index == local_write_index) {
+    return false;
+  }
 
-    next = c->head + 1;  // next is where head will point to after this write.
-    if (next >= maxlen)
-        next = 0;
+  *byte = rb->buffer[local_read_index];
+  local_read_index = (local_read_index + 1) & rb->mask;
+  rb->read_index = local_read_index;
 
-    if (next == c->tail)  // if the head + 1 == tail, circular buffer is full
-        return -1;
+  return true;
+}
 
-    c->buffer[c->head] = data;  // Load data and then move
-    c->head = next;             // head to next data offset.
-    return 0;  // return success to indicate successful push.
+bool ring_buffer_write(ring_buffer_t* rb, uint8_t byte) {
+  uint32_t local_write_index = rb->write_index;
+  uint32_t local_read_index = rb->read_index;
+
+  uint32_t next_write_index = (local_write_index + 1) & rb->mask;
+
+  if (next_write_index == local_read_index) {
+    return false;
+  }
+
+  rb->buffer[local_write_index] = byte;
+  rb->write_index = next_write_index;
+  return true;
 }

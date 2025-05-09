@@ -18,22 +18,62 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "stm32f4xx.h"
 #include "clock.h"
 #include "timer.h"
 #include "led.h"
+#include "uart.h"
+#include "utils/ringbuffer.h"
+
+char key;
+static void uart_rx_callback(void);
 
 /*TODOs
- * - Enable UARTs for CLI
+ * - Set up interrupt call backs for UART TX to unload buffer
+ * - Set up interrupt call back for UART RX to load buffer.
+ * Enable UARTs for CLI
  * - Enable the CLI
  * -
  */
 
+#define RING_BUFFER_SIZE	64
+
+static ring_buffer_t rb_tx = {0U};
+//static ring_buffer_t rb_rx = {0U};
+static uint8_t data_buffer[RING_BUFFER_SIZE] = {0U};
+static uint8_t char_array[10] ={'H','E','L','L','O','W','O','R','L','D'};
+uint8_t read_byte;
+
 int main(void)
 {
+
 	clock_init();
 	init_leds();
+	init_PC6();
 	tim4_output_compare();
+	tim8_output_compare();
+	uart2_rxtx_interrupt_init();
 
+	printf("Hello...\r\n");
+
+}
+
+static void uart_rx_callback(void)
+{
+	key = USART2->DR;
+	if(key == 'o'){
+		printf("Hello...\r");
+		//cycle_leds();
+	}
+}
+
+
+void USART2_IRQHandler(void)
+{
+	//Check if uart SR is set
+	if(USART2->SR & SR_RXNE){
+		uart_rx_callback();
+	}
 }
