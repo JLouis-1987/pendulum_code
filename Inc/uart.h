@@ -17,7 +17,10 @@
 void uart2_tx_init (void);
 void uart2_rxtx_interrupt_init(void);
 void uart2_rxtx_init (void);
-//static void uart_rx_callback(void);
+uint32_t rx_buffer_count(void);
+uint8_t rx_buffer_read(void);
+void uart_rx_callback(void);
+void uart_tx_callback(void);
 char uart2_read(void);
 
 #define SR_RXNE			(1U<<5) 	//Read data register is empty not mask

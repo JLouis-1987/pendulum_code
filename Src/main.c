@@ -26,54 +26,64 @@
 #include "led.h"
 #include "uart.h"
 #include "utils/ringbuffer.h"
-
-char key;
-static void uart_rx_callback(void);
+#include "commands.h"
+#include "i2c.h"
+#include "lsm6dso.h"
 
 /*TODOs
- * - Set up interrupt call backs for UART TX to unload buffer
- * - Set up interrupt call back for UART RX to load buffer.
- * Enable UARTs for CLI
- * - Enable the CLI
- * -
+ * test 12c write function by writing to a read registers
  */
 
-#define RING_BUFFER_SIZE	64
 
-static ring_buffer_t rb_tx = {0U};
-//static ring_buffer_t rb_rx = {0U};
-static uint8_t data_buffer[RING_BUFFER_SIZE] = {0U};
-static uint8_t char_array[10] ={'H','E','L','L','O','W','O','R','L','D'};
-uint8_t read_byte;
+/* Pin outs
+ * I2C to ADC
+ * 	PB8 --> SCL
+ * 	PB7 --> SDA
+ * Debug UART
+ * 	PA2 --> TX
+ * 	PA3 --> RX
+ *
+ */
+
 
 int main(void)
 {
-
+	/*initialize the MCU peripherals*/
 	clock_init();
 	init_leds();
 	init_PC6();
-	tim4_output_compare();
+	I2C1_Init();
 	tim8_output_compare();
 	uart2_rxtx_interrupt_init();
+	printf("MCU peripheral inits complete \n\r");
 
-	printf("Hello...\r\n");
-
-}
-
-static void uart_rx_callback(void)
-{
-	key = USART2->DR;
-	if(key == 'o'){
-		printf("Hello...\r");
-		//cycle_leds();
+	/*initialize the other devices on the board*/
+	if(check_IMU() == true){
+		printf("IMU responded with correct device ID\n\r");
 	}
-}
+	init_lsm6dso();
 
+
+	printf("Hello World\n\r");
+
+	while(1)
+	{
+		if(rx_buffer_count() > 0){
+			process_commands();
+		}
+	}
+
+}
 
 void USART2_IRQHandler(void)
 {
-	//Check if uart SR is set
 	if(USART2->SR & SR_RXNE){
 		uart_rx_callback();
 	}
+	if(USART2->SR & SR_TXE){
+		uart_tx_callback();
+	}
+
 }
+
+

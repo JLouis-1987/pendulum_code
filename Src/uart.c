@@ -4,7 +4,9 @@
  *  Created on: May 5, 2025
  *      Author: gaspr
  */
-
+#include <stdint.h>
+#include <stdio.h>
+#include <stdbool.h>
 #include "uart.h"
 #include "clock.h"
 #include "utils/ringbuffer.h"
@@ -21,71 +23,60 @@
 #define UART_BAUDRATE 	115200
 #define RING_BUFFER_SIZE	64
 
-//static ring_buffer_t rb_tx = {0U};
-//static ring_buffer_t rb_rx = {0U};
-//static uint8_t data_buffer[RING_BUFFER_SIZE] = {0U};
+static ring_buffer_t rb_tx = {0U};
+static ring_buffer_t rb_rx = {0U};
+static uint8_t data_buffer[RING_BUFFER_SIZE] = {0U};
 
 static void uart_set_baudrate(USART_TypeDef *USARTx, uint32_t PeriphClk,
 		uint32_t BaudRate);
 static uint16_t compute_uart_DIV(uint32_t PeriphClk, uint32_t BaudRate);
 void uart2_write(int ch);
 
-//static void uart_tx_clear_interrupt();
-
+uint8_t read_byte;
 
 int __io_putchar(int ch)
 {
 	//put data into the ring buffer
-	//ringbuf_push(ch, tx_buffer);
+	ring_buffer_write(&rb_tx, ch);
 	//enable the TX interrupt
-	//USART2->CR2 |= TXEIE;
-	//return ch;
-
-	uart2_write(ch);
+	USART2->CR1 |= TXEIE;
 	return ch;
-
 }
-/*
-static void uart_rx_callback(void)
+
+void uart_rx_callback(void)
 {
-
-	ringbuf_push(USART2->DR, rxbuffer);
+	ring_buffer_write(&rb_rx, USART2->DR);
 }
 
-static void uart_tx_callback(void)
+void uart_tx_callback(void)
 {
-	if (ringbuf_is_empty(*txbuffer)){
-		while(1);//need to add handling for this
+	uint8_t output_byte;
+	if(!ring_buffer_read(&rb_tx, &output_byte)){
+		USART2->CR1 &= ~TXEIE; //if ring buffer if empty disable transmit interrupt
+	}else{
+		USART2->DR = (output_byte & 0xFF);
 	}
 
-
-}
-*/
-
-//not used
-char uart2_read(void) {
-	//make sure receive data register is empty
-	while (!(USART2->SR & SR_RXNE)) {
-	}
-	//write to transmit data register
-	return USART2->DR;
 }
 
-void uart2_write(int ch) {
-	//make sure transmit data register is empty
-
-	while (!(USART2->SR & SR_TXE)) {
-	}
-	//write to transmit data register
-	USART2->DR = (ch & 0xFF);
-	for (int i = 0; i < 100; i++) {}
+uint32_t rx_buffer_count(void)
+{
+	return ring_buffer_count(&rb_rx);
 }
+
+uint8_t rx_buffer_read()
+{
+	uint8_t byte;
+	ring_buffer_read(&rb_rx, &byte);
+	return byte;
+}
+
 
 void uart2_rxtx_interrupt_init(void) {
 
-	//Init ring buffer
-	//ringbuf_init(*tx_buffer);
-	//ringbuf_init(*rx_buffer);
+	//Init ring buffers
+	ring_buffer_setup(&rb_rx, data_buffer, RING_BUFFER_SIZE);
+	ring_buffer_setup(&rb_tx, data_buffer, RING_BUFFER_SIZE);
 
 	//Configure the UART GPIO pins
 	//enable clock access
