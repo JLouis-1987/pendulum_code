@@ -21,7 +21,7 @@
 #define TXEIE			(1U<<7)		//Enable TX interrupt
 
 #define UART_BAUDRATE 	115200
-#define RING_BUFFER_SIZE	64
+#define RING_BUFFER_SIZE   256
 
 static ring_buffer_t rb_tx = {0U};
 static ring_buffer_t rb_rx = {0U};

@@ -29,9 +29,21 @@
 #include "commands.h"
 #include "i2c.h"
 #include "lsm6dso.h"
+#include "encoder.h"
 
 /*TODOs
- * test 12c write function by writing to a read registers
+ * -Create structure and read function to read accerometer data and convert to real units.
+ * -tie execution to an interrupt based timer (start with 100 Hz) or a timed super loop
+ * -Create cli interface to dump data to the the serial port.
+ *
+ * -set up code to drive the motor controller
+ * 	- check to see if there is a library for this
+ *
+ * - set up PID loop to control motor speed
+ * 	- need to figure out loop time for this and set up a interrupt
+ *
+ *
+ *
  */
 
 
@@ -42,8 +54,13 @@
  * Debug UART
  * 	PA2 --> TX
  * 	PA3 --> RX
- *
- */
+ * Encoder Input TIM3
+ * 	PB4 --> Ch1
+ * 	PB5 --> Ch2
+ * Motor Control TIM 9
+ *  PE5 --> CH1
+ *  PE6 --> CH2
+  */
 
 
 int main(void)
@@ -55,6 +72,7 @@ int main(void)
 	I2C1_Init();
 	tim8_output_compare();
 	uart2_rxtx_interrupt_init();
+	init_encoder();
 	printf("MCU peripheral inits complete \n\r");
 
 	/*initialize the other devices on the board*/
@@ -71,6 +89,7 @@ int main(void)
 		if(rx_buffer_count() > 0){
 			process_commands();
 		}
+
 	}
 
 }
@@ -84,6 +103,16 @@ void USART2_IRQHandler(void)
 		uart_tx_callback();
 	}
 
+}
+
+void TIM3_IRQHandler(void) {
+    if (TIM3->SR & TIM_SR_CC1IF) { // Check capture flag
+        uint16_t captured_value = TIM3->CCR1; // Read captured value
+        uint16_t direction_value = (GPIOB->IDR & 0x20); //read other pin for direction
+        encoder_callback(captured_value, direction_value);
+        TIM3->SR &= ~TIM_SR_CC1IF; // Clear flag
+
+    }
 }
 
 
